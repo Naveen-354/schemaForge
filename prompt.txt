@@ -1,0 +1,1630 @@
+# SchemaForge
+
+Build **SchemaForge**, a personal AI-powered database engineering workspace.
+
+Do not assume a specific programming language, framework, database, AI provider, hosting platform, or architecture unless required by an implementation decision. Choose modern, flexible, lightweight technologies that support the product requirements below.
+
+This is primarily a **personal development tool**, not a SaaS product. Optimize for developer experience, flexibility, speed, low operating cost, local development, and the ability to evolve the system over time.
+
+The application should combine:
+
+* Database IDE
+* Database schema explorer
+* Schema visualization
+* SQL workspace
+* Query analysis
+* Database documentation
+* AI database assistant
+* AI coding workspace
+* Multi-agent orchestration
+* Agent monitoring and control
+* Project/workspace management
+
+The core goal is:
+
+> **Give me one visual workspace where I can understand databases, work with SQL, and delegate database/software-engineering tasks to multiple AI agents while seeing exactly what those agents are doing.**
+
+---
+
+# 1. CORE PRODUCT CONCEPT
+
+SchemaForge is not simply a database administration tool with an AI chatbot attached.
+
+AI agents are a first-class part of the application.
+
+The application should allow me to:
+
+* connect to databases
+* inspect database structures
+* understand relationships
+* visualize schemas
+* write SQL
+* generate SQL using natural language
+* execute SQL
+* analyze SQL
+* analyze query performance
+* create schema changes
+* generate migrations
+* review database designs
+* document database structures
+* ask AI questions about the database
+* create development tasks
+* assign tasks to AI agents
+* run multiple agents simultaneously
+* monitor agents
+* control agent execution
+* review agent outputs
+* approve sensitive actions
+* maintain persistent project context
+* reuse previous work
+
+The application should feel like a combination of:
+
+**Database IDE + AI coding environment + multi-agent control center.**
+
+---
+
+# 2. CORE HIERARCHY
+
+Design the system around these concepts:
+
+```text
+Workspace
+    ↓
+Project
+    ↓
+Database
+    ↓
+Task
+    ↓
+Agent
+    ↓
+Tools
+    ↓
+Events
+    ↓
+Artifacts
+    ↓
+Result
+```
+
+These concepts should be reflected both in the architecture and UI.
+
+---
+
+# 3. WORKSPACE
+
+A workspace represents my overall SchemaForge environment.
+
+A workspace can contain multiple projects.
+
+Example:
+
+```text
+Workspace
+├── Mutual Fund Platform
+├── Trading Application
+├── Personal Projects
+└── Experiments
+```
+
+A workspace should contain:
+
+* projects
+* agents
+* tasks
+* databases
+* artifacts
+* activity
+* configuration
+* project knowledge
+* agent history
+
+The workspace should provide a high-level overview of everything currently happening.
+
+---
+
+# 4. PROJECT
+
+A project represents a specific software/database system.
+
+A project may contain:
+
+* one or more databases
+* source code
+* schema definitions
+* SQL files
+* migrations
+* documentation
+* AI agents
+* tasks
+* architecture information
+* project-specific instructions
+* project memory
+* generated artifacts
+
+Example:
+
+```text
+Project
+├── Database
+├── Schema
+├── SQL
+├── Migrations
+├── Agents
+├── Tasks
+├── Artifacts
+├── Documentation
+└── Activity
+```
+
+The project should be able to maintain its own persistent context.
+
+Agents working inside a project should understand the project's conventions and existing architecture without requiring the user to repeatedly explain them.
+
+---
+
+# 5. DATABASE CONNECTIONS
+
+SchemaForge should support connecting to databases through configurable connection definitions.
+
+A database connection should contain appropriate metadata such as:
+
+* name
+* type
+* host
+* port
+* database
+* username
+* authentication configuration
+* schemas
+* connection status
+
+Credentials and secrets must never be unnecessarily exposed to AI models.
+
+Secrets should be stored securely.
+
+The architecture should allow multiple database engines to be supported eventually.
+
+Do not make PostgreSQL-specific behavior impossible to extend, but PostgreSQL can receive first-class support.
+
+---
+
+# 6. DATABASE EXPLORER
+
+Provide a database explorer similar to a modern database IDE.
+
+Users should be able to navigate:
+
+```text
+Database
+├── Schemas
+│   ├── Tables
+│   │   ├── Columns
+│   │   ├── Primary Keys
+│   │   ├── Foreign Keys
+│   │   ├── Indexes
+│   │   └── Constraints
+│   ├── Views
+│   ├── Functions
+│   ├── Procedures
+│   └── Triggers
+```
+
+Selecting a database object should show useful information.
+
+For a table:
+
+* columns
+* data types
+* nullable
+* default values
+* primary keys
+* foreign keys
+* indexes
+* constraints
+* relationships
+* row information where available
+* generated SQL
+* related objects
+
+---
+
+# 7. SCHEMA VISUALIZATION
+
+Provide a visual representation of database relationships.
+
+The schema diagram should show:
+
+* tables
+* columns
+* primary keys
+* foreign keys
+* relationships
+* indexes where useful
+* cardinality where available
+
+Users should be able to:
+
+* zoom
+* pan
+* search
+* focus on selected tables
+* hide unrelated tables
+* rearrange tables
+* save layouts
+* export diagrams if practical
+
+The visualization should remain usable for large schemas.
+
+Do not create a diagram that becomes unusable when hundreds of tables exist.
+
+Support filtering and focused views.
+
+---
+
+# 8. SQL WORKSPACE
+
+Provide a powerful SQL editor.
+
+It should support:
+
+* syntax highlighting
+* autocomplete where practical
+* schema-aware suggestions
+* query execution
+* query history
+* multiple query tabs
+* saved queries
+* query results
+* execution time
+* errors
+* pagination
+* result export where useful
+
+The SQL editor should understand the current database/project context.
+
+---
+
+# 9. NATURAL LANGUAGE TO SQL
+
+One of the core features is natural-language database interaction.
+
+Example:
+
+```text
+Show customers whose total investment is greater than 10 lakh.
+```
+
+SchemaForge should understand the database structure and generate appropriate SQL.
+
+Other examples:
+
+```text
+Find tables related to customers.
+
+Show all foreign keys referencing customer.
+
+Why is this query slow?
+
+Create a table for SIP mandates.
+
+Generate a migration for adding an external UUID.
+
+Explain this query.
+
+Find possible missing indexes.
+
+Compare these two schema designs.
+```
+
+AI should use database metadata as context instead of guessing the schema.
+
+---
+
+# 10. AI DATABASE ASSISTANT
+
+Provide an AI assistant that understands the current:
+
+* workspace
+* project
+* database
+* schema
+* selected table
+* selected SQL
+* query result
+* task
+* relevant project knowledge
+
+The assistant should be context-aware.
+
+For example, when I select a table and ask:
+
+```text
+Is this table properly indexed?
+```
+
+the AI should receive the relevant table metadata rather than the entire database unnecessarily.
+
+Context should be selected intelligently.
+
+---
+
+# 11. MULTI-AGENT SYSTEM
+
+The most important feature of SchemaForge is the multi-agent workspace.
+
+Multiple AI agents should be able to operate simultaneously.
+
+Example:
+
+```text
+Architect Agent
+Database Agent
+Backend Agent
+Frontend Agent
+Research Agent
+Testing Agent
+Security Agent
+Code Review Agent
+Documentation Agent
+```
+
+These are examples only.
+
+The user should be able to create/configure agents dynamically.
+
+Agents should have:
+
+* unique identity
+* name
+* role
+* instructions
+* model/provider
+* capabilities
+* permissions
+* workspace
+* project
+* current task
+* status
+* execution history
+* activity
+* artifacts
+* configuration
+
+---
+
+# 12. AGENT STATUS
+
+Agents should have clear states.
+
+For example:
+
+```text
+IDLE
+QUEUED
+RUNNING
+WAITING
+WAITING_FOR_APPROVAL
+PAUSED
+COMPLETED
+FAILED
+STOPPED
+CANCELLED
+```
+
+The UI should make the current state immediately visible.
+
+---
+
+# 13. AGENT TASKS
+
+A task represents a concrete objective.
+
+Example:
+
+```text
+Task:
+Review the customer schema and identify normalization problems.
+```
+
+A task should support:
+
+* title
+* description
+* project
+* database
+* assigned agent
+* priority
+* status
+* dependencies
+* context
+* artifacts
+* result
+* timestamps
+
+Tasks should be independently trackable.
+
+---
+
+# 14. TASK DEPENDENCIES
+
+Agents should be able to work sequentially or collaboratively.
+
+Example:
+
+```text
+Research Agent
+       ↓
+Architecture Agent
+       ↓
+Database Agent
+       ↓
+Backend Agent
+       ↓
+Testing Agent
+       ↓
+Code Review Agent
+```
+
+A task should be able to depend on another task.
+
+An agent should be able to hand an artifact or result to another agent.
+
+---
+
+# 15. AGENT COLLABORATION
+
+Agents should not need to exchange huge conversations.
+
+Instead, agents should communicate primarily through structured artifacts and task results.
+
+Example:
+
+```text
+Architecture Agent
+    ↓
+Database Design Artifact
+    ↓
+Database Agent
+    ↓
+Migration Artifact
+    ↓
+Backend Agent
+```
+
+Artifacts can include:
+
+* SQL
+* migration
+* schema diagram
+* analysis
+* requirements
+* API contract
+* code changes
+* test results
+* documentation
+* research findings
+* architecture decisions
+
+This makes multi-agent workflows efficient and reproducible.
+
+---
+
+# 16. AGENT TOOLS
+
+Agents should operate through controlled tools.
+
+Possible tools include:
+
+```text
+Filesystem
+Terminal
+Git
+Database Metadata
+SQL Execution
+Schema Inspection
+Code Search
+File Search
+HTTP/API
+Browser/Research
+Testing
+Build
+Migration
+```
+
+Tools must be independent from the agent itself.
+
+An agent should request a tool rather than directly having unlimited access.
+
+---
+
+# 17. TOOL PERMISSIONS
+
+Every agent should have configurable permissions.
+
+Example:
+
+```text
+Database Agent
+
+✓ Read schema
+✓ Run SELECT
+✓ Generate SQL
+✓ Analyze queries
+✗ DROP TABLE
+✗ TRUNCATE
+✗ Production migration
+```
+
+Another trusted agent may have broader permissions.
+
+Permissions should be configurable at:
+
+* workspace level
+* project level
+* agent level
+* task level
+* tool level
+
+---
+
+# 18. DANGEROUS DATABASE OPERATIONS
+
+SchemaForge must protect against accidental destructive operations.
+
+Classify operations.
+
+Safe:
+
+```text
+SELECT
+EXPLAIN
+Schema metadata
+Read-only inspection
+```
+
+Potentially destructive:
+
+```text
+INSERT
+UPDATE
+DELETE
+CREATE
+ALTER
+DROP
+TRUNCATE
+Migration execution
+```
+
+Destructive or high-impact operations should require explicit approval unless the user has deliberately configured an appropriate trusted policy.
+
+AI should never silently execute destructive database changes.
+
+---
+
+# 19. APPROVAL SYSTEM
+
+When an agent wants to perform a sensitive action:
+
+```text
+Agent:
+I generated this migration.
+
+Action:
+ALTER TABLE customer ...
+
+Risk:
+Database structure will change.
+
+[Review SQL] [Approve] [Reject]
+```
+
+The user should be able to review the proposed action before execution.
+
+Approval should become part of the execution history.
+
+---
+
+# 20. AGENT ACTIVITY
+
+Every agent should have an activity timeline.
+
+Example:
+
+```text
+10:42:11  Task started
+10:42:13  Reading database schema
+10:42:14  Inspecting customer table
+10:42:17  Generated SQL
+10:42:18  SQL validation completed
+10:42:19  Waiting for approval
+10:43:02  User approved
+10:43:03  SQL executed
+10:43:04  Task completed
+```
+
+The user should be able to inspect the complete execution lifecycle.
+
+Do not expose private chain-of-thought.
+
+Display:
+
+* actions
+* tool calls
+* tool outputs
+* status
+* summaries
+* errors
+* generated artifacts
+* user approvals
+
+---
+
+# 21. REAL-TIME AGENT MONITORING
+
+The UI should update agent activity in real time where practical.
+
+I should be able to see several agents working simultaneously.
+
+Example:
+
+```text
+┌─────────────────────────────────────────────┐
+│ Agents                                      │
+├─────────────────────────────────────────────┤
+│ ● Database Agent       Analyzing indexes    │
+│ ● Backend Agent        Writing repository   │
+│ ● Research Agent       Researching options  │
+│ ○ Testing Agent        Waiting              │
+│ ✓ Review Agent         Completed            │
+└─────────────────────────────────────────────┘
+```
+
+Selecting an agent should open its detailed workspace.
+
+---
+
+# 22. AGENT WORKSPACE
+
+Each agent should have a dedicated view.
+
+Show:
+
+```text
+Agent
+├── Current Task
+├── Status
+├── Conversation
+├── Activity
+├── Tools
+├── Files
+├── Database Objects
+├── Artifacts
+├── Changes
+├── Errors
+└── Execution History
+```
+
+The user should be able to switch between agents without losing context.
+
+---
+
+# 23. MULTI-AGENT DASHBOARD
+
+Provide a central dashboard showing all agents.
+
+Example:
+
+```text
+Agents
+────────────────────────────────────────
+
+Database Agent
+RUNNING
+Analyzing indexes
+3 tools used
+
+Backend Agent
+RUNNING
+Implementing repository layer
+7 files changed
+
+Research Agent
+WAITING
+Research completed
+
+Testing Agent
+QUEUED
+Waiting for Backend Agent
+
+Review Agent
+IDLE
+```
+
+This should be one of the primary screens.
+
+---
+
+# 24. PROJECT MEMORY
+
+SchemaForge should maintain persistent project knowledge.
+
+Examples:
+
+```text
+Architecture decisions
+Database conventions
+Naming conventions
+Important relationships
+Business rules
+Migration rules
+API contracts
+Known problems
+Agent decisions
+Research results
+```
+
+Agents should retrieve relevant knowledge when needed.
+
+Do not blindly send all project history to every AI request.
+
+Context retrieval should be selective.
+
+---
+
+# 25. AGENT MEMORY
+
+Agents may maintain their own useful memory.
+
+However, separate:
+
+```text
+User Preferences
+Project Knowledge
+Agent Memory
+Task Context
+Temporary Execution Context
+```
+
+Do not mix these together.
+
+---
+
+# 26. ARTIFACT SYSTEM
+
+Artifacts are first-class objects.
+
+An artifact may be:
+
+* SQL
+* migration
+* schema diagram
+* code patch
+* architecture document
+* research result
+* query analysis
+* database report
+* test result
+* documentation
+
+Artifacts should be associated with:
+
+* project
+* task
+* agent
+* execution
+* timestamp
+
+Artifacts should be reusable by other agents.
+
+---
+
+# 27. GIT INTEGRATION
+
+For projects containing source code, Git should be treated as a first-class capability.
+
+Agents should be able to:
+
+* inspect status
+* inspect branches
+* inspect diff
+* search history
+* create branches
+* modify files
+* create commits
+* review changes
+
+Do not automatically push, merge, or publish changes without appropriate permission.
+
+The UI should show agent-created changes clearly.
+
+---
+
+# 28. CODE + DATABASE CONTEXT
+
+SchemaForge should eventually understand the relationship between application code and database structure.
+
+For example:
+
+```text
+Java Entity
+    ↓
+Repository
+    ↓
+SQL
+    ↓
+Database Table
+```
+
+or:
+
+```text
+TypeScript API
+    ↓
+Database Query
+    ↓
+Table
+```
+
+The AI should be able to reason across both code and database context.
+
+Example:
+
+```text
+"Find where this customer table is used in the application."
+```
+
+or:
+
+```text
+"Changing this column type will affect which parts of the application?"
+```
+
+---
+
+# 29. QUERY PERFORMANCE
+
+Support database performance analysis where the database provides the necessary information.
+
+The AI should be able to analyze:
+
+* query execution time
+* query plans
+* indexes
+* joins
+* sequential scans
+* possible bottlenecks
+* inefficient queries
+
+Example:
+
+```text
+Why is this query slow?
+
+→ Analyze SQL
+→ Inspect relevant schema
+→ Inspect indexes
+→ Run EXPLAIN where permitted
+→ Explain likely bottleneck
+→ Suggest optimization
+```
+
+Do not make unsupported performance claims.
+
+---
+
+# 30. SQL HISTORY
+
+Maintain query history.
+
+Each query can include:
+
+* SQL
+* project
+* database
+* execution time
+* status
+* timestamp
+* agent/user
+* tags
+* result metadata
+
+Allow useful queries to be saved and reused.
+
+---
+
+# 31. NATURAL-LANGUAGE DATABASE COMMANDS
+
+The user should be able to interact naturally.
+
+Examples:
+
+```text
+Show me all tables containing customer information.
+
+Generate a query for customers with active SIPs.
+
+Explain the relationship between these tables.
+
+Find unused indexes.
+
+Create a migration to add external_id.
+
+Review this database design.
+
+Generate SQL but don't execute it.
+
+Execute this query.
+
+Why did this query fail?
+```
+
+The system should determine the required context and tools.
+
+---
+
+# 32. AGENT PROVIDER INDEPENDENCE
+
+Do not tightly couple the application to a single AI provider.
+
+Create a provider abstraction.
+
+The system should eventually allow different agents to use different models.
+
+For example:
+
+```text
+Architect Agent → Provider A
+Coding Agent → Provider B
+Research Agent → Provider C
+Local Agent → Local Model
+```
+
+The core SchemaForge system should not depend on one model vendor.
+
+---
+
+# 33. MCP COMPATIBILITY
+
+Design the tool architecture so MCP-style tools can be integrated later.
+
+Do not make MCP mandatory for the initial implementation.
+
+The architecture should allow external tools to become agent capabilities.
+
+Potential integrations:
+
+```text
+Filesystem
+GitHub
+PostgreSQL
+Browser
+Documentation
+Research
+Cloud services
+```
+
+---
+
+# 34. LOCAL + REMOTE EXECUTION
+
+The system should be designed around two conceptual environments.
+
+## Control Layer
+
+Responsible for:
+
+* workspace
+* projects
+* users
+* agents
+* tasks
+* orchestration
+* events
+* artifacts
+* persistence
+* UI
+* configuration
+
+## Execution Layer
+
+Responsible for:
+
+* filesystem access
+* terminal
+* Git
+* local databases
+* coding agents
+* long-running processes
+* local tools
+
+This separation allows the application to work both locally and with a hosted control layer.
+
+---
+
+# 35. PERSONAL-FIRST DESIGN
+
+Do not over-engineer the application as a multi-tenant SaaS platform.
+
+This is primarily for personal use.
+
+Prioritize:
+
+* simplicity
+* speed
+* flexibility
+* low cost
+* local development
+* easy deployment
+* easy experimentation
+* strong developer experience
+
+Authentication and authorization should still be implemented properly where required, but avoid unnecessary enterprise complexity.
+
+---
+
+# 36. USER INTERFACE
+
+The UI should feel like a modern desktop development environment.
+
+Avoid a generic admin dashboard.
+
+The primary interface should resemble:
+
+```text
+┌─────────────────────────────────────────────────────────┐
+│ SchemaForge                              Workspace      │
+├──────────────┬───────────────────────────┬──────────────┤
+│              │                           │              │
+│ Navigation   │       Main Workspace      │  Inspector   │
+│              │                           │              │
+│ Projects     │   Database / Agents /     │  Context     │
+│ Databases    │   Tasks / SQL / Diagram   │  Details     │
+│ Agents       │                           │  Tools       │
+│ Tasks        │                           │  Artifacts   │
+│ Artifacts    │                           │              │
+│              │                           │              │
+├──────────────┴───────────────────────────┴──────────────┤
+│ Activity / Terminal / SQL Results / Agent Events       │
+└─────────────────────────────────────────────────────────┘
+```
+
+The layout should be configurable.
+
+The user should be able to open multiple agent views simultaneously.
+
+---
+
+# 37. INFORMATION DENSITY
+
+The application is intended for a developer.
+
+Do not design it like a beginner-oriented consumer application.
+
+Prioritize:
+
+* compact information
+* keyboard shortcuts
+* searchable interfaces
+* command palette
+* tabs
+* split panels
+* resizable panels
+* quick actions
+* contextual actions
+
+Avoid excessive onboarding and unnecessary animations.
+
+---
+
+# 38. COMMAND PALETTE
+
+Provide a command palette where useful.
+
+Example:
+
+```text
+> Open Database
+> Create Agent
+> New Task
+> Run SQL
+> Explain SQL
+> Generate Migration
+> Search Schema
+> Open Agent Dashboard
+> View Activity
+> Search Artifacts
+```
+
+---
+
+# 39. GLOBAL ACTIVITY
+
+Provide a global activity stream.
+
+It should show:
+
+* agent actions
+* database operations
+* task changes
+* artifacts
+* errors
+* approvals
+* project changes
+
+Allow filtering by:
+
+* project
+* agent
+* task
+* database
+* event type
+* time
+
+---
+
+# 40. SEARCH
+
+Provide global search across:
+
+* projects
+* databases
+* tables
+* columns
+* SQL
+* agents
+* tasks
+* artifacts
+* activity
+* project knowledge
+
+Search should be fast.
+
+---
+
+# 41. ERROR HANDLING
+
+Errors should be visible and actionable.
+
+For example:
+
+```text
+Agent failed
+
+Reason:
+Database connection timeout.
+
+Actions:
+[Retry]
+[Inspect Error]
+[Change Connection]
+[Assign Another Agent]
+```
+
+Do not silently swallow errors.
+
+Agents should be able to recover from transient failures where safe.
+
+---
+
+# 42. AGENT RECOVERY
+
+If an agent fails:
+
+* preserve its execution history
+* preserve generated artifacts
+* preserve tool calls
+* show the error
+* allow retry
+* allow resume where possible
+* allow reassignment
+* allow another agent to continue the task
+
+Do not lose task state.
+
+---
+
+# 43. COST AND USAGE
+
+AI usage should be observable.
+
+Where provider information is available, track:
+
+* model
+* provider
+* input tokens
+* output tokens
+* estimated cost
+* latency
+* task
+* agent
+
+The system should avoid unnecessary AI calls.
+
+Use deterministic code whenever possible.
+
+---
+
+# 44. SECURITY
+
+Security is important even though this is a personal application.
+
+Protect:
+
+* database credentials
+* API keys
+* tokens
+* local files
+* Git credentials
+* agent permissions
+
+Never expose secrets unnecessarily to AI models.
+
+Agents should receive the minimum required information.
+
+---
+
+# 45. AUDITABILITY
+
+Important actions should be traceable.
+
+For example:
+
+```text
+Who/what:
+Database Agent
+
+Task:
+Add customer external ID
+
+Action:
+ALTER TABLE customer ...
+
+Approval:
+User approved
+
+Execution:
+Successful
+
+Timestamp:
+...
+```
+
+The system should make it possible to understand what happened after the fact.
+
+---
+
+# 46. EXTENSIBILITY
+
+Design the system so future capabilities can be added without rewriting the core.
+
+Potential future features:
+
+* database migration management
+* schema diff
+* database synchronization
+* automatic documentation
+* database health reports
+* query optimization agent
+* security auditing agent
+* schema quality scoring
+* RAG over project documentation
+* MCP servers
+* local LLM support
+* remote coding agents
+* browser agents
+* GitHub integration
+* CI/CD integration
+* deployment agents
+
+These should be extensions rather than tightly coupled features.
+
+---
+
+# 47. IMPORTANT PRODUCT PHILOSOPHY
+
+SchemaForge should not try to replace every developer tool.
+
+Instead, it should become the **orchestration and visibility layer** that connects them.
+
+The application should allow existing AI agents and developer tools to work together.
+
+Think of SchemaForge as:
+
+```text
+                 SchemaForge
+                      │
+        ┌─────────────┼─────────────┐
+        │             │             │
+     Database       AI Agents       Code
+        │             │             │
+     PostgreSQL     Codex          Git
+     MySQL          Claude         Files
+     etc.           Gemini         Terminal
+                    Local AI       APIs
+```
+
+SchemaForge manages the workspace, context, tasks, tools, permissions, events and results.
+
+---
+
+# 48. PRIMARY USER WORKFLOW
+
+A typical workflow should look like:
+
+```text
+1. Open SchemaForge
+
+2. Select Workspace
+
+3. Select Project
+
+4. Connect/Open Database
+
+5. Explore Schema
+
+6. Create Task
+
+7. Assign Agent
+
+8. Agent inspects context
+
+9. Agent uses tools
+
+10. Agent produces artifacts
+
+11. User observes activity
+
+12. Agent requests approval if required
+
+13. User reviews
+
+14. Agent executes approved action
+
+15. Result is stored
+
+16. Another agent can continue
+
+17. Final result is reviewed
+```
+
+---
+
+# 49. EXAMPLE MULTI-AGENT WORKFLOW
+
+User:
+
+```text
+Improve the customer database design.
+```
+
+SchemaForge could orchestrate:
+
+```text
+Research Agent
+    ↓
+Analyze existing conventions
+
+Database Agent
+    ↓
+Inspect schema
+
+Architecture Agent
+    ↓
+Propose improvements
+
+Performance Agent
+    ↓
+Analyze indexes and queries
+
+Security Agent
+    ↓
+Review sensitive fields
+
+Review Agent
+    ↓
+Combine findings
+
+User
+    ↓
+Approve changes
+
+Migration Agent
+    ↓
+Generate migration
+
+Testing Agent
+    ↓
+Validate migration
+```
+
+The user should be able to see every stage.
+
+---
+
+# 50. DO NOT BUILD A CHAT APP
+
+The AI interface should not be just:
+
+```text
+User
+↓
+Chatbot
+↓
+Answer
+```
+
+Instead:
+
+```text
+User
+↓
+Task
+↓
+Agent
+↓
+Context
+↓
+Tools
+↓
+Execution
+↓
+Artifacts
+↓
+Approval
+↓
+Result
+```
+
+Chat is only one interface to the agent.
+
+The underlying system should be task- and event-oriented.
+
+---
+
+# 51. DO NOT LOCK INTO ONE AGENT IMPLEMENTATION
+
+Do not assume that every agent must be implemented internally.
+
+SchemaForge should be capable of orchestrating different types of agents:
+
+```text
+Built-in AI Agent
+External Coding Agent
+CLI Agent
+Local Model Agent
+Remote Agent
+MCP-based Agent
+```
+
+The architecture should provide a common execution model around them.
+
+---
+
+# 52. DEVELOPMENT APPROACH
+
+Build the application incrementally.
+
+Do not attempt to implement every feature simultaneously.
+
+Start with the smallest useful vertical slice:
+
+```text
+Workspace
+→ Project
+→ Database
+→ Schema Explorer
+→ SQL
+→ AI Assistant
+→ Agent
+→ Task
+→ Agent Events
+→ Agent Dashboard
+```
+
+Once this foundation works, expand into:
+
+```text
+Multi-agent orchestration
+Tools
+Approvals
+Artifacts
+Git
+Local execution
+Persistent memory
+MCP
+Advanced database analysis
+```
+
+Every stage should leave the application runnable.
+
+---
+
+# 53. ENGINEERING PRINCIPLES
+
+Follow these principles:
+
+* Keep modules loosely coupled.
+* Prefer simple architecture.
+* Avoid unnecessary dependencies.
+* Avoid premature abstractions.
+* Keep provider-specific code isolated.
+* Keep agent execution isolated from UI.
+* Keep tools independent from agents.
+* Treat events as first-class data.
+* Treat artifacts as first-class data.
+* Preserve execution history.
+* Make destructive operations explicit.
+* Keep secrets secure.
+* Optimize AI context.
+* Avoid unnecessary AI calls.
+* Design for local-first development.
+* Keep deployment flexibility.
+* Make future integrations possible without making the initial system complex.
+
+---
+
+# 54. AGENT INSTRUCTIONS
+
+You are working as an autonomous senior engineer.
+
+Before implementing anything:
+
+1. Understand the requirements.
+2. Identify the core domain objects.
+3. Design the simplest architecture that satisfies them.
+4. Select technologies based on the requirements rather than personal preference.
+5. Implement incrementally.
+6. Keep the application runnable.
+7. Test important functionality.
+8. Validate the final result.
+9. Fix obvious issues before stopping.
+
+Do not spend unnecessary tokens explaining basic implementation details.
+
+Do not generate excessive documentation.
+
+Do not add comments that merely restate obvious code.
+
+Do not create unnecessary abstractions.
+
+Do not introduce infrastructure without a clear need.
+
+Make reasonable engineering decisions autonomously.
+
+When a decision materially affects the architecture, explain the decision briefly.
+
+---
+
+# 55. FINAL PRODUCT DEFINITION
+
+The finished SchemaForge should feel like a **personal AI database engineering operating environment**.
+
+It should allow me to open one application and see:
+
+```text
+My Projects
+     ↓
+My Databases
+     ↓
+My Tasks
+     ↓
+My AI Agents
+     ↓
+What They Are Doing
+     ↓
+What They Are Changing
+     ↓
+What They Have Produced
+     ↓
+What Requires My Approval
+     ↓
+What Has Been Completed
+```
+
+The central product idea is:
+
+> **SchemaForge is a visual control center for database engineering and AI agents, where databases, code, tasks, tools, agents, context, artifacts and execution history exist together in one workspace.**
+
+Build around this concept rather than around a particular framework or AI provider.
