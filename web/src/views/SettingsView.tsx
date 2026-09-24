@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Save, KeyRound, Cpu } from 'lucide-react';
+import { Save, KeyRound, Cpu, ShieldCheck, Link2, Copy, ExternalLink, Github } from 'lucide-react';
+import type { OAuthProviderSettings } from '../api';
+import { GoogleLogo } from './AuthView';
 import { api, type SettingsResponse } from '../api';
 import { useStore } from '../store';
 import { Badge, KV } from '../components/ui';
@@ -19,8 +21,9 @@ export function SettingsView() {
     setSecrets({});
     st().toast('Settings saved', 'success');
     await load();
+    await st().refreshAuth();
   };
-  const clearSecret = async (k: string) => { await api.saveSettings({ [k]: null }); await load(); };
+  const clearSecret = async (k: string) => { await api.saveSettings({ [k]: null }); await load(); await st().refreshAuth(); };
   if (!s) return <div className="empty">Loading…</div>;
   return (
     <div className="panel-body pad" style={{ maxWidth: 820 }}>
@@ -67,6 +70,21 @@ export function SettingsView() {
       </div>
 
       <div className="section">
+        <h4><ShieldCheck size={11} /> Sign-in providers</h4>
+        <div className="dim small" style={{ marginBottom: 8 }}>Add Google or GitHub sign-in. Their buttons appear on the sign-in screen once a client ID and secret are saved. Environment variables, when set, take priority.</div>
+        <div className="grid cols-2">
+          {(['google', 'github'] as const).map((name) => (
+            <OAuthProviderCard key={name} name={name} info={s.signIn[name]} publicUrl={s.signIn.publicUrl}
+              clientId={values[`oauth.${name}.clientId`] ?? ''} onClientId={(v) => setValues({ ...values, [`oauth.${name}.clientId`]: v })}
+              secret={secrets[`oauth.${name}.clientSecret`] ?? ''} onSecret={(v) => setSecrets({ ...secrets, [`oauth.${name}.clientSecret`]: v })}
+              secretStored={!!s.secrets[`oauth.${name}.clientSecret`]} onClearSecret={() => void clearSecret(`oauth.${name}.clientSecret`)} />
+          ))}
+        </div>
+      </div>
+
+      <ConnectedAccounts />
+
+      <div className="section">
         <h4>Built-in heuristic provider</h4>
         <div className="dim small">Always available and free: a deterministic agent that inspects schemas, runs quality checks, generates simple SQL/migrations and drives the same tool + approval pipeline. Useful for offline work, tests and cheap deterministic tasks. Switch agents to a model provider in their configuration once a key is set.</div>
       </div>
@@ -77,6 +95,100 @@ export function SettingsView() {
       </div>
 
       <button className="btn primary" onClick={() => void save()}><Save size={13} /> Save settings</button>
+    </div>
+  );
+}
+
+type OAuthName = 'google' | 'github';
+
+const OAUTH_HELP: Record<OAuthName, { label: string; consoleUrl: string; consoleName: string; steps: string; callbackField: string }> = {
+  google: {
+    label: 'Google', consoleUrl: 'https://console.cloud.google.com/apis/credentials', consoleName: 'Google Cloud Console',
+    steps: 'Choose Create credentials, then OAuth client ID, with application type Web application.', callbackField: 'Authorized redirect URIs',
+  },
+  github: {
+    label: 'GitHub', consoleUrl: 'https://github.com/settings/applications/new', consoleName: 'GitHub OAuth Apps',
+    steps: 'Register a new OAuth app. Use the address you open SchemaForge at as the homepage URL.', callbackField: 'Authorization callback URL',
+  },
+};
+
+function OAuthProviderCard(props: {
+  name: OAuthName; info: OAuthProviderSettings; publicUrl: string | null;
+  clientId: string; onClientId(v: string): void; secret: string; onSecret(v: string): void; secretStored: boolean; onClearSecret(): void;
+}) {
+  const { name, info } = props;
+  const help = OAUTH_HELP[name];
+  const toast = useStore((s) => s.toast);
+  const callback = `${props.publicUrl ?? window.location.origin}/api/auth/${name}/callback`;
+  const copy = () => { void navigator.clipboard.writeText(callback).then(() => toast('Callback URL copied', 'success')); };
+  return (
+    <div className="card col">
+      <div className="row">
+        {name === 'google' ? <GoogleLogo /> : <Github size={14} />}<strong>{help.label}</strong><span className="grow" />
+        <Badge status={info.configured ? 'ok' : ''}>{info.configured ? 'enabled' : 'not configured'}</Badge>
+      </div>
+      <ol className="small dim" style={{ margin: 0, paddingLeft: 18, lineHeight: 1.6 }}>
+        <li>Open <a href={help.consoleUrl} target="_blank" rel="noreferrer">{help.consoleName} <ExternalLink size={10} /></a>. {help.steps}</li>
+        <li>Add this URL under <strong>{help.callbackField}</strong>:</li>
+      </ol>
+      <div className="row"><code className="grow ellipsis" title={callback}>{callback}</code><button type="button" className="btn sm" onClick={copy} title="Copy"><Copy size={11} /></button></div>
+      {info.fromEnv ? (
+        <div className="small muted">Configured by environment variables, which take priority over this form.</div>
+      ) : (
+        <>
+          <div className="field"><label>Client ID</label><input className="input" autoComplete="off" value={props.clientId} onChange={(e) => props.onClientId(e.target.value)} /></div>
+          <div className="field">
+            <label>Client secret {props.secretStored ? <span className="badge ok">stored</span> : null}</label>
+            <div className="row">
+              <input className="input grow" type="password" autoComplete="off" placeholder={props.secretStored ? '•••••••• (stored)' : ''} value={props.secret} onChange={(e) => props.onSecret(e.target.value)} />
+              {props.secretStored && <button type="button" className="btn sm" onClick={props.onClearSecret}>clear</button>}
+            </div>
+          </div>
+        </>
+      )}
+      <div className="small muted">Always open SchemaForge at this same address; the provider only returns to the exact callback URL above.</div>
+    </div>
+  );
+}
+
+function ConnectedAccounts() {
+  const auth = useStore((s) => s.auth);
+  const refreshAuth = useStore((s) => s.refreshAuth);
+  const toast = useStore((s) => s.toast);
+  if (!auth?.user) return null;
+  const disconnect = async (provider: OAuthName) => {
+    if (!window.confirm(`Disconnect ${OAUTH_HELP[provider].label}? You will no longer be able to sign in with it.`)) return;
+    try {
+      await api.disconnectIdentity(provider);
+      await refreshAuth();
+      toast(`${OAUTH_HELP[provider].label} disconnected`, 'success');
+    } catch (e) {
+      toast((e as Error).message, 'error');
+    }
+  };
+  return (
+    <div className="section">
+      <h4><Link2 size={11} /> Your sign-in methods</h4>
+      <div className="card col">
+        <div className="row small">
+          <strong style={{ width: 130 }}>Email and password</strong><span className="dim">{auth.user.email}</span><span className="grow" />
+          {auth.hasPassword ? <Badge status="ok">set</Badge> : <span className="muted">no password</span>}
+        </div>
+        {(['google', 'github'] as const).map((p) => {
+          const identity = auth.identities.find((i) => i.provider === p);
+          return (
+            <div key={p} className="row small">
+              <strong style={{ width: 130 }} className="row">{p === 'google' ? <GoogleLogo size={12} /> : <Github size={12} />} {OAUTH_HELP[p].label}</strong>
+              <span className="dim">{identity ? identity.email ?? 'connected' : ''}</span><span className="grow" />
+              {identity
+                ? <button type="button" className="btn sm" onClick={() => void disconnect(p)}>Disconnect</button>
+                : auth.providers[p]
+                  ? <a className="btn sm primary" href={`/api/auth/${p}/connect`}>Connect</a>
+                  : <span className="muted">configure it above first</span>}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

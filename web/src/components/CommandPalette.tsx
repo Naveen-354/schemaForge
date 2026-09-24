@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Database, Table2, Columns3, Bot, ListTodo, Package, FileCode, BookOpen, Activity, Boxes, Plus, Settings, Terminal, LayoutDashboard, Search } from 'lucide-react';
+import { Database, Table2, Columns3, Bot, ListTodo, Package, FileCode, BookOpen, Activity, Boxes, Plus, Settings, Terminal, LayoutDashboard, Search, LogOut } from 'lucide-react';
 import type { SearchHit } from '@schemaforge/shared';
 import { api } from '../api';
 import { openAgent, openArtifact, openDiagram, openSql, openTable, openTask, useStore } from '../store';
@@ -44,6 +44,7 @@ export function CommandPalette() {
       { id: 'newconn', group: 'Actions', title: 'Add database connection', icon: <Plus size={13} />, run: () => st().setModal({ kind: 'connection' }) },
       { id: 'newproject', group: 'Actions', title: 'New project', icon: <Plus size={13} />, run: () => st().setModal({ kind: 'project' }) },
       { id: 'newknowledge', group: 'Actions', title: 'Add project knowledge', icon: <Plus size={13} />, run: () => st().setModal({ kind: 'knowledge' }) },
+      { id: 'logout', group: 'Actions', title: 'Log out', icon: <LogOut size={13} />, run: () => void st().logout() },
     ];
     if (conn) {
       list.push({ id: 'diagram', group: 'Actions', title: 'Open schema diagram', icon: <Boxes size={13} />, run: () => openDiagram(conn) });

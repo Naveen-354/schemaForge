@@ -2,7 +2,8 @@ import { create } from 'zustand';
 import type {
   Agent, Approval, Artifact, DatabaseConnection, KnowledgeEntry, Project, SavedQuery, SchemaSnapshot, SfEvent, Task, Workspace,
 } from '@schemaforge/shared';
-import { api, type ExecuteOutcome } from './api';
+import type { AuthStatus, AuthUser } from '@schemaforge/shared';
+import { api, setUnauthorizedHandler, type ExecuteOutcome } from './api';
 
 export type TabKind = 'dashboard' | 'table' | 'diagram' | 'sql' | 'agent' | 'task' | 'artifact' | 'knowledge' | 'settings' | 'project' | 'agents' | 'tasks' | 'artifacts' | 'connection' | 'tools';
 
@@ -64,8 +65,16 @@ interface State {
   paletteOpen: boolean;
   toasts: Toast[];
   modal: { kind: 'connection' | 'task' | 'agent' | 'project' | 'knowledge'; params?: Record<string, string> } | null;
+  auth: AuthStatus | null;
+  user: AuthUser | null;
+  isAuthenticated: boolean;
 
   boot(): Promise<void>;
+  login(email: string, password: string): Promise<void>;
+  register(email: string, password: string): Promise<void>;
+  logout(): Promise<void>;
+  sessionExpired(): void;
+  refreshAuth(): Promise<void>;
   selectWorkspace(id: string): Promise<void>;
   selectProject(id: string | null): Promise<void>;
   loadProjectData(): Promise<void>;
@@ -112,6 +121,26 @@ function persist(s: State): void {
 
 const persisted = loadPersisted();
 
+// Live event stream handle, kept outside the store so logout can close it.
+let liveSource: EventSource | null = null;
+let liveRetry: ReturnType<typeof setTimeout> | null = null;
+
+function stopLive(): void {
+  if (liveRetry) clearTimeout(liveRetry);
+  liveRetry = null;
+  liveSource?.close();
+  liveSource = null;
+}
+
+/** Drop everything loaded for the signed-in user; UI preferences (tabs, layout) are kept. */
+function resetSession(set: (patch: Partial<State>) => void): void {
+  stopLive();
+  set({
+    user: null, isAuthenticated: false, live: 'closed', workspaces: [], projects: [], connections: [], agents: [], tasks: [], approvals: [],
+    artifacts: [], knowledge: [], savedQueries: [], events: [], schemas: {}, schemaLoading: {}, selection: {}, paletteOpen: false, modal: null,
+  });
+}
+
 export const useStore = create<State>((set, get) => ({
   ready: false,
   live: 'connecting',
@@ -125,8 +154,34 @@ export const useStore = create<State>((set, get) => ({
   sqlTabs: persisted.sqlTabs ?? {},
   bottomTab: 'activity', bottomOpen: persisted.bottomOpen ?? true, inspectorOpen: persisted.inspectorOpen ?? true, sidebarOpen: persisted.sidebarOpen ?? true,
   paletteOpen: false, toasts: [], modal: null,
+  auth: null, user: null, isAuthenticated: false,
 
   async boot() {
+    let status: AuthStatus;
+    try {
+      status = await api.authStatus();
+    } catch (e) {
+      set({ auth: null, user: null, isAuthenticated: false, ready: true });
+      throw e;
+    }
+    set({ auth: status, user: status.user, isAuthenticated: !!status.user });
+    if (!status.user) {
+      set({ ready: true });
+      return;
+    }
+    // Results of connecting Google/GitHub come back as query parameters on the redirect.
+    const params = new URLSearchParams(window.location.search);
+    const notice = params.get('auth_notice');
+    const authError = params.get('auth_error');
+    if (notice || authError) {
+      params.delete('auth_notice');
+      params.delete('auth_error');
+      const qs = params.toString();
+      window.history.replaceState(null, '', `${window.location.pathname}${qs ? `?${qs}` : ''}${window.location.hash}`);
+      if (notice) get().toast(notice, 'success');
+      if (authError) get().toast(authError, 'error');
+    }
+
     const workspaces = await api.workspaces();
     const workspaceId = workspaces.find((w) => w.id === get().workspaceId)?.id ?? workspaces[0]?.id ?? null;
     set({ workspaces, workspaceId });
@@ -138,6 +193,37 @@ export const useStore = create<State>((set, get) => ({
     await get().loadProjectData();
     get().connectLive();
     set({ ready: true });
+  },
+
+  async login(email, password) {
+    await api.login({ email, password });
+    set({ ready: false });
+    await get().boot();
+  },
+
+  async register(email, password) {
+    await api.register({ email, password });
+    set({ ready: false });
+    await get().boot();
+  },
+
+  async logout() {
+    try { await api.logout(); } catch { /* the session is cleared locally either way */ }
+    resetSession(set);
+    set({ auth: await api.authStatus().catch(() => null) });
+  },
+
+  sessionExpired() {
+    if (!get().isAuthenticated) return;
+    resetSession(set);
+    get().toast('Your session has ended. Sign in again.', 'error');
+    void api.authStatus().then((auth) => set({ auth })).catch(() => undefined);
+  },
+
+  async refreshAuth() {
+    const auth = await api.authStatus();
+    if (!auth.user) return get().sessionExpired();
+    set({ auth, user: auth.user });
   },
 
   async selectWorkspace(id) {
@@ -189,11 +275,12 @@ export const useStore = create<State>((set, get) => ({
     try {
       const snap = await api.schema(connectionId, refresh);
       set((s) => ({ schemas: { ...s.schemas, [connectionId]: snap } }));
-      if (refresh) void get().reload('connections');
+      if (refresh) get().reload('connections').catch(() => undefined);
       return snap;
     } catch (e) {
+      if (!get().isAuthenticated) return null;
       get().toast(`Schema load failed: ${(e as Error).message}`, 'error');
-      void get().reload('connections');
+      get().reload('connections').catch(() => undefined);
       return null;
     } finally {
       set((s) => ({ schemaLoading: { ...s.schemaLoading, [connectionId]: false } }));
@@ -256,6 +343,8 @@ export const useStore = create<State>((set, get) => ({
   },
 
   toast(text, kind = 'info') {
+    // Requests interrupted by an ended session all fail with this; the session-ended toast already explains it.
+    if (kind === 'error' && !get().isAuthenticated && /sign in required/i.test(text)) return;
     const id = ++toastSeq;
     set((s) => ({ toasts: [...s.toasts, { id, kind, text }] }));
     setTimeout(() => get().dismissToast(id), kind === 'error' ? 8000 : 4000);
@@ -270,14 +359,26 @@ export const useStore = create<State>((set, get) => ({
   },
 
   connectLive() {
+    if (liveSource || liveRetry) return;
     const pending = new Map<string, ReturnType<typeof setTimeout>>();
     const schedule = (entity: Parameters<State['reload']>[0]) => {
       if (pending.has(entity)) return;
-      pending.set(entity, setTimeout(() => { pending.delete(entity); void get().reload(entity); }, 120));
+      // Background refreshes may fail when a session ends; the 401 handler already takes care of that.
+      pending.set(entity, setTimeout(() => { pending.delete(entity); get().reload(entity).catch(() => undefined); }, 120));
+    };
+    const retry = () => {
+      liveRetry = setTimeout(() => {
+        liveRetry = null;
+        if (!get().isAuthenticated) return;
+        // A dropped stream may mean the session ended; check before reconnecting.
+        api.authStatus().then((s) => (s.user ? open() : get().sessionExpired())).catch(retry);
+      }, 2000);
     };
     const open = () => {
+      if (!get().isAuthenticated || liveSource) return;
       const lastSeq = get().events.at(-1)?.seq ?? 0;
       const es = new EventSource(`/api/events/stream?afterSeq=${lastSeq}`);
+      liveSource = es;
       es.addEventListener('ready', () => set({ live: 'open' }));
       es.addEventListener('event', (m) => {
         const e = JSON.parse((m as MessageEvent).data) as SfEvent;
@@ -292,9 +393,11 @@ export const useStore = create<State>((set, get) => ({
         if (target) schedule(target);
       });
       es.onerror = () => {
-        set({ live: 'closed' });
         es.close();
-        setTimeout(open, 2000);
+        if (liveSource !== es) return;
+        liveSource = null;
+        set({ live: 'closed' });
+        retry();
       };
     };
     open();
@@ -302,6 +405,8 @@ export const useStore = create<State>((set, get) => ({
 }));
 
 // ---------- selectors / helpers ----------
+
+setUnauthorizedHandler(() => useStore.getState().sessionExpired());
 
 export const useProject = () => useStore((s) => s.projects.find((p) => p.id === s.projectId) ?? null);
 export const useActiveTab = () => useStore((s) => s.tabs.find((t) => t.id === s.activeTabId) ?? s.tabs[0]);

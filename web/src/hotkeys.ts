@@ -7,6 +7,7 @@ export function useHotkeys(): void {
     const onKey = (e: KeyboardEvent) => {
       const mod = e.ctrlKey || e.metaKey;
       const st = useStore.getState();
+      if (!st.isAuthenticated) return;
       if (mod && e.key.toLowerCase() === 'k') { e.preventDefault(); st.toggle('paletteOpen'); return; }
       if (mod && e.key.toLowerCase() === 'p' && !e.shiftKey) { e.preventDefault(); st.toggle('paletteOpen', true); return; }
       if (mod && e.shiftKey && e.key.toLowerCase() === 'n') { e.preventDefault(); st.newSqlTab(); return; }

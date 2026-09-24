@@ -523,6 +523,35 @@ export const DEFAULT_PERMISSIONS: AgentPermissions = {
   sql: { safe: 'allow', write: 'ask', ddl: 'ask', destructive: 'deny' },
 };
 
+// ---------- Auth ----------
+
+export type AuthProvider = 'local' | 'google' | 'github';
+
+export interface AuthUser {
+  id: ID;
+  email: string;
+  provider: AuthProvider;
+  createdAt: string;
+}
+
+export interface AuthIdentity {
+  provider: 'google' | 'github';
+  email: string | null;
+  createdAt: string;
+}
+
+export interface AuthStatus {
+  user: AuthUser | null;
+  /** False on a fresh install: the first registration creates the owner account. */
+  hasUsers: boolean;
+  registrationOpen: boolean;
+  /** Which external sign-in providers the server has credentials for. */
+  providers: { google: boolean; github: boolean };
+  /** For the signed-in user: whether a password is set and which external accounts are connected. */
+  hasPassword: boolean;
+  identities: AuthIdentity[];
+}
+
 export function tableKey(schema: string, name: string): string {
   return `${schema}.${name}`;
 }

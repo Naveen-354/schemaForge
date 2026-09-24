@@ -5,6 +5,23 @@ import { config } from '../config.js';
 export type Row = Record<string, unknown>;
 
 const SCHEMA = `
+CREATE TABLE IF NOT EXISTS users (
+  id TEXT PRIMARY KEY, email TEXT UNIQUE NOT NULL, password_hash TEXT,
+  provider TEXT NOT NULL DEFAULT 'local', provider_id TEXT,
+  created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS sessions (
+  id TEXT PRIMARY KEY, user_id TEXT NOT NULL, created_at TEXT NOT NULL, expires_at TEXT NOT NULL,
+  last_seen_at TEXT NOT NULL, user_agent TEXT, ip TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
+CREATE TABLE IF NOT EXISTS user_identities (
+  provider TEXT NOT NULL, provider_id TEXT NOT NULL, user_id TEXT NOT NULL, email TEXT, created_at TEXT NOT NULL,
+  PRIMARY KEY (provider, provider_id)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_identities_user_provider ON user_identities(user_id, provider);
+INSERT OR IGNORE INTO user_identities (provider, provider_id, user_id, email, created_at)
+  SELECT provider, provider_id, id, email, created_at FROM users WHERE provider IN ('google', 'github') AND provider_id IS NOT NULL;
 CREATE TABLE IF NOT EXISTS workspaces (
   id TEXT PRIMARY KEY, name TEXT NOT NULL, created_at TEXT NOT NULL
 );

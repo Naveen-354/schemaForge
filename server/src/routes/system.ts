@@ -6,6 +6,7 @@ import { agents, approvals, artifacts, connections, events, knowledge, projects,
 import { bus } from '../events.js';
 import { config } from '../config.js';
 import { providerStatuses } from '../ai/providers/index.js';
+import { oauthConfigured, oauthCredentials } from '../auth.js';
 
 export const system = new Hono();
 
@@ -91,14 +92,25 @@ system.get('/search', (c) => {
 });
 
 // ---------- settings ----------
-const SECRET_KEYS = ['anthropic.apiKey', 'openai.apiKey'];
-const PLAIN_KEYS = ['openai.baseUrl', 'openai.defaultModel', 'openai.models', 'openai.priceInputPerM', 'openai.priceOutputPerM', 'anthropic.fallbacks'];
+const SECRET_KEYS = ['anthropic.apiKey', 'openai.apiKey', 'oauth.google.clientSecret', 'oauth.github.clientSecret'];
+const PLAIN_KEYS = [
+  'openai.baseUrl', 'openai.defaultModel', 'openai.models', 'openai.priceInputPerM', 'openai.priceOutputPerM', 'anthropic.fallbacks',
+  'oauth.google.clientId', 'oauth.github.clientId',
+];
+/** Secrets that may instead come from the environment, so the UI can show them as set. */
+const SECRET_ENV: Record<string, string | undefined> = { 'anthropic.apiKey': process.env.ANTHROPIC_API_KEY, 'openai.apiKey': process.env.OPENAI_API_KEY };
 
 system.get('/settings', (c) => {
-  const s: AppSettings & { values: Record<string, string | null>; secrets: Record<string, boolean> } = {
+  const oauthInfo = (name: 'google' | 'github') => ({ configured: oauthConfigured(name), fromEnv: oauthCredentials(name).fromEnv });
+  const s: AppSettings & {
+    values: Record<string, string | null>;
+    secrets: Record<string, boolean>;
+    signIn: { publicUrl: string | null; google: { configured: boolean; fromEnv: boolean }; github: { configured: boolean; fromEnv: boolean } };
+  } = {
     providers: providerStatuses(), dataDir: config.dataDir, version: config.version,
     values: Object.fromEntries(PLAIN_KEYS.map((k) => [k, settings.get(k)])),
-    secrets: Object.fromEntries(SECRET_KEYS.map((k) => [k, !!settings.get(k) || (k === 'anthropic.apiKey' ? !!process.env.ANTHROPIC_API_KEY : !!process.env.OPENAI_API_KEY)])),
+    secrets: Object.fromEntries(SECRET_KEYS.map((k) => [k, !!settings.get(k) || !!SECRET_ENV[k]])),
+    signIn: { publicUrl: config.publicUrl, google: oauthInfo('google'), github: oauthInfo('github') },
   };
   return c.json(s);
 });

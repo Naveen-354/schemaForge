@@ -9,10 +9,12 @@ import { BottomPanel } from './components/BottomPanel';
 import { CommandPalette } from './components/CommandPalette';
 import { Modals } from './components/Modals';
 import { useHotkeys } from './hotkeys';
+import { AuthView } from './views/AuthView';
 
 export function App() {
   const ready = useStore((s) => s.ready);
   const boot = useStore((s) => s.boot);
+  const isAuthenticated = useStore((s) => s.isAuthenticated);
   const sidebarOpen = useStore((s) => s.sidebarOpen);
   const inspectorOpen = useStore((s) => s.inspectorOpen);
   const bottomOpen = useStore((s) => s.bottomOpen);
@@ -23,7 +25,15 @@ export function App() {
 
   useEffect(() => { void boot().catch((e) => useStore.getState().toast(`Failed to load: ${e.message}`, 'error')); }, [boot]);
 
+  // Toasts render on the sign-in screen too, so "your session has ended" is visible after an expiry.
+  const toastList = (
+    <div className="toasts">
+      {toasts.map((t) => <div key={t.id} className={`toast ${t.kind}`} onClick={() => useStore.getState().dismissToast(t.id)}>{t.text}</div>)}
+    </div>
+  );
+
   if (!ready) return <div className="splash">Loading SchemaForge…</div>;
+  if (!isAuthenticated) return <>{<AuthView />}{toastList}</>;
 
   return (
     <div className="app">

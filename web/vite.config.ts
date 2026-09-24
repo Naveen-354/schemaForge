@@ -9,7 +9,8 @@ export default defineConfig({
   },
   server: {
     port: 5173,
-    proxy: { '/api': { target: 'http://127.0.0.1:4310', changeOrigin: true } },
+    // Keep the browser's Host header so the server builds OAuth callback URLs for the dev origin.
+    proxy: { '/api': { target: 'http://127.0.0.1:4310', changeOrigin: false } },
   },
   build: { outDir: 'dist', sourcemap: false, chunkSizeWarningLimit: 1500 },
 });

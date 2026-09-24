@@ -4,6 +4,15 @@ import type {
   SqlClassification, TableInfo, Task, TaskContext, TaskInput, Workspace, WorkspaceOverview,
 } from '@schemaforge/shared';
 
+import type { AuthStatus, AuthUser } from '@schemaforge/shared';
+
+let unauthorizedHandler: (() => void) | null = null;
+
+/** Called when any non-auth request returns 401 (the session expired or was revoked). */
+export function setUnauthorizedHandler(fn: () => void): void {
+  unauthorizedHandler = fn;
+}
+
 export class ApiError extends Error {
   constructor(message: string, public status: number, public body: unknown) {
     super(message);
@@ -20,6 +29,7 @@ async function req<T>(method: string, url: string, body?: unknown): Promise<T> {
   let data: unknown = null;
   try { data = text ? JSON.parse(text) : null; } catch { data = text; }
   if (!res.ok) {
+    if (res.status === 401 && !url.startsWith('/auth/')) unauthorizedHandler?.();
     const msg = (data as { error?: string; message?: string })?.message ?? (data as { error?: string })?.error ?? `${res.status} ${res.statusText}`;
     throw new ApiError(msg, res.status, data);
   }
@@ -34,7 +44,12 @@ const qs = (params: Record<string, string | number | boolean | null | undefined>
 export interface LintFinding { code: string; severity: 'high' | 'medium' | 'low' | 'info'; table: string; column: string | null; message: string; suggestion: string | null }
 export interface TableDetail { table: TableInfo; ddl: string; referencedBy: { table: string; foreignKeys: TableInfo['foreignKeys'] }[]; findings: LintFinding[] }
 export interface ExecuteOutcome { result: QueryResult | null; error: string | null; classification: SqlClassification; historyId: string }
-export type SettingsResponse = AppSettings & { values: Record<string, string | null>; secrets: Record<string, boolean> };
+export interface OAuthProviderSettings { configured: boolean; fromEnv: boolean }
+export type SettingsResponse = AppSettings & {
+  values: Record<string, string | null>;
+  secrets: Record<string, boolean>;
+  signIn: { publicUrl: string | null; google: OAuthProviderSettings; github: OAuthProviderSettings };
+};
 
 export const api = {
   health: () => req<{ ok: boolean; version: string }>('GET', '/health'),
@@ -102,4 +117,10 @@ export const api = {
   search: (q: string, projectId?: string) => req<SearchHit[]>('GET', `/search${qs({ q, projectId })}`),
   settings: () => req<SettingsResponse>('GET', '/settings'),
   saveSettings: (body: Record<string, string | null>) => req<{ ok: true }>('PUT', '/settings', body),
+
+  authStatus: () => req<AuthStatus>('GET', '/auth/me'),
+  login: (body: { email: string; password: string }) => req<{ user: AuthUser }>('POST', '/auth/login', body),
+  register: (body: { email: string; password: string }) => req<{ user: AuthUser }>('POST', '/auth/register', body),
+  logout: () => req<{ ok: true }>('POST', '/auth/logout'),
+  disconnectIdentity: (provider: 'google' | 'github') => req<AuthStatus>('DELETE', `/auth/identities/${provider}`),
 };

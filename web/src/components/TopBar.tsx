@@ -1,14 +1,16 @@
 import React from 'react';
-import { Database, Search, PanelLeft, PanelRight, PanelBottom, Bot, Plus, Settings, Activity } from 'lucide-react';
+import { Database, Search, PanelLeft, PanelRight, PanelBottom, Bot, Plus, Settings, Activity, LogOut } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { useStore } from '../store';
 
 export function TopBar() {
-  const { workspaces, workspaceId, projects, projectId, live, approvals, agents } = useStore(useShallow((s) => ({
-    workspaces: s.workspaces, workspaceId: s.workspaceId, projects: s.projects, projectId: s.projectId, live: s.live, approvals: s.approvals, agents: s.agents,
+  const { workspaces, workspaceId, projects, projectId, live, approvals, agents, user } = useStore(useShallow((s) => ({
+    workspaces: s.workspaces, workspaceId: s.workspaceId, projects: s.projects, projectId: s.projectId, live: s.live, approvals: s.approvals, agents: s.agents, user: s.user,
   })));
   const st = useStore.getState;
   const running = agents.filter((a) => a.status === 'RUNNING' || a.status === 'WAITING_FOR_APPROVAL').length;
+  
+
   return (
     <div className="topbar">
       <div className="brand"><Database size={16} /> SchemaForge</div>
@@ -38,6 +40,12 @@ export function TopBar() {
       <button className="btn ghost sm icon" onClick={() => st().toggle('bottomOpen')} title="Toggle bottom panel (Ctrl+J)"><PanelBottom size={14} /></button>
       <button className="btn ghost sm icon" onClick={() => st().toggle('inspectorOpen')} title="Toggle inspector (Ctrl+I)"><PanelRight size={14} /></button>
       <button className="btn ghost sm icon" onClick={() => st().openTab({ id: 'settings', kind: 'settings', title: 'Settings', params: {} })} title="Settings"><Settings size={14} /></button>
+      {user && (
+        <>
+          <span className="dim small ellipsis" style={{ maxWidth: 180 }} title={`Signed in as ${user.email}`}>{user.email}</span>
+          <button className="btn ghost sm icon" onClick={() => void st().logout()} title="Log out"><LogOut size={14} /></button>
+        </>
+      )}
     </div>
   );
 }
